@@ -30,7 +30,7 @@ static NSUInteger const kMaximumHistoryCount = 100;
 - (NSURLRequest *)homePageRequest {
     NSString *homePageURLString = self.preferencesStore.homePageURLString;
     if (homePageURLString.length == 0) {
-        homePageURLString = @"http://www.google.com";
+        homePageURLString = @"https://play.autodarts.io/";
     }
     return [self requestForURLString:homePageURLString];
 }
