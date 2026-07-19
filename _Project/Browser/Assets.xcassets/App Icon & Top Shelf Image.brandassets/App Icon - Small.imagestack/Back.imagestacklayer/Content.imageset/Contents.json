@@ -1,18 +1,18 @@
-[37m{[0m
-[37m  "images" : [[0m
-[37m    {[0m
-[37m      "idiom" : "tv",[0m
-[37m      "filename" : "b0.png",[0m
-[37m      "scale" : "1x"[0m
-[37m    },[0m
-[37m    {[0m
-[37m      "idiom" : "tv",[0m
-[37m      "filename" : "b0@2x.png",[0m
-[37m      "scale" : "2x"[0m
-[37m    }[0m
-[37m  ],[0m
-[37m  "info" : {[0m
-[37m    "version" : 1,[0m
-[37m    "author" : "xcode"[0m
-[37m  }[0m
-[37m}[0m
+{
+  "images" : [
+    {
+      "filename" : "b0.png",
+      "idiom" : "tv",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "b0 1.png",
+      "idiom" : "tv",
+      "scale" : "2x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
