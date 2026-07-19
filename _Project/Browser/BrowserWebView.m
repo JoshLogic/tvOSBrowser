@@ -31,8 +31,17 @@ static void BrowserEnsureWebKitRuntimeLoaded(void) {
     });
 }
 
+static const NSTimeInterval kBrowserPumpRunLoopTimeout = 5.0;
+
 static void BrowserPumpRunLoopUntil(BOOL *done) {
+    NSTimeInterval deadline = [NSDate timeIntervalSinceReferenceDate] + kBrowserPumpRunLoopTimeout;
     while (!*done) {
+        if ([NSDate timeIntervalSinceReferenceDate] >= deadline) {
+            // Give up rather than block the main thread forever. This can happen if a
+            // page navigation tears down the JavaScript context while an evaluation is
+            // still in flight, in which case the completion handler may never be called.
+            break;
+        }
         @autoreleasepool {
             [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
         }

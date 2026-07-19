@@ -38,6 +38,26 @@ static UIColor *BrowserPageActionTextColor(void) {
     return self;
 }
 
+// Sets a form field's value the same way a real keystroke would: through the
+// element's native property setter, not a direct `.value =` assignment. Modern
+// JS frameworks (React, Vue, etc.) track input state via their own wrapped
+// setter, so a direct assignment is invisible to them even though the DOM value
+// visibly changes - the framework's internal state (and any multi-step form
+// flow built on top of it) doesn't see the typed value.
+static NSString * const kBrowserSetEditableValueScript =
+    @"if (typeof target.value !== 'undefined') {"
+        "var nativeValueSetter = (window.HTMLInputElement && Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')) ||"
+                                 "(window.HTMLTextAreaElement && Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value'));"
+        "if (nativeValueSetter && nativeValueSetter.set) { nativeValueSetter.set.call(target, '%@'); }"
+        "else { target.value = '%@'; }"
+    "} else {"
+        "target.textContent = '%@';"
+    "}"
+    "if (target.dispatchEvent) {"
+        "target.dispatchEvent(new Event('input', { bubbles: true }));"
+        "target.dispatchEvent(new Event('change', { bubbles: true }));"
+    "}";
+
 - (NSString *)hoverStateAtDOMPoint:(CGPoint)point webView:(BrowserWebView *)webView {
     return [self.domInteractionService evaluateHoverStateJavaScriptAtPoint:point webView:webView];
 }
@@ -120,35 +140,27 @@ static UIColor *BrowserPageActionTextColor(void) {
                                                          handler:^(__unused UIAlertAction *action) {
         UITextField *inputTextField = alertController.textFields.firstObject;
         NSString *escapedText = [weakSelf.domInteractionService javaScriptEscapedString:inputTextField.text];
+        NSString *setValueScript = [NSString stringWithFormat:kBrowserSetEditableValueScript, escapedText, escapedText, escapedText];
         [weakSelf.domInteractionService evaluateEditableElementJavaScriptAtPoint:point
                                                                          webView:webView
                                                                             body:[NSString stringWithFormat:@"var target = browserEditableTarget();"
                                                                                   "if (!target) { return 'false'; }"
-                                                                                  "if (typeof target.value !== 'undefined') { target.value = '%@'; }"
-                                                                                  "else { target.textContent = '%@'; }"
-                                                                                  "if (target.dispatchEvent) {"
-                                                                                      "target.dispatchEvent(new Event('input', { bubbles: true }));"
-                                                                                      "target.dispatchEvent(new Event('change', { bubbles: true }));"
-                                                                                  "}"
+                                                                                  "%@"
                                                                                   "if (target.form) { target.form.submit(); }"
-                                                                                  "return 'true';", escapedText, escapedText]];
+                                                                                  "return 'true';", setValueScript]];
     }];
     UIAlertAction *doneAction = [UIAlertAction actionWithTitle:@"Done"
                                                          style:UIAlertActionStyleDefault
                                                        handler:^(__unused UIAlertAction *action) {
         UITextField *inputTextField = alertController.textFields.firstObject;
         NSString *escapedText = [weakSelf.domInteractionService javaScriptEscapedString:inputTextField.text];
+        NSString *setValueScript = [NSString stringWithFormat:kBrowserSetEditableValueScript, escapedText, escapedText, escapedText];
         [weakSelf.domInteractionService evaluateEditableElementJavaScriptAtPoint:point
                                                                          webView:webView
                                                                             body:[NSString stringWithFormat:@"var target = browserEditableTarget();"
                                                                                   "if (!target) { return 'false'; }"
-                                                                                  "if (typeof target.value !== 'undefined') { target.value = '%@'; }"
-                                                                                  "else { target.textContent = '%@'; }"
-                                                                                  "if (target.dispatchEvent) {"
-                                                                                      "target.dispatchEvent(new Event('input', { bubbles: true }));"
-                                                                                      "target.dispatchEvent(new Event('change', { bubbles: true }));"
-                                                                                  "}"
-                                                                                  "return 'true';", escapedText, escapedText]];
+                                                                                  "%@"
+                                                                                  "return 'true';", setValueScript]];
     }];
     [alertController addAction:doneAction];
     if ([testedFormResponse isEqualToString:@"true"]) {
